@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#15171A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Rungs">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Rungs — Calisthenics Progression</title>
+<style>
+:root{
+  --ink:#15171A;
+  --ink-2:#1D2024;
+  --ink-3:#262A2F;
+  --bone:#EDE9E1;
+  --bone-dim:#A8A399;
+  --chalk:#5B8BA0;
+  --chalk-dim:#3D5C6B;
+  --amber:#C9883B;
+  --rust:#A0524B;
+  --line:#33373D;
+  --font-display:'Oswald-fallback', 'Arial Narrow', sans-serif;
+  --font-body:-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:'SF Mono', 'Roboto Mono', monospace;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0; padding:0; background:var(--ink); color:var(--bone); font-family:var(--font-body); -webkit-font-smoothing:antialiased; overscroll-behavior-y:none;}
+body{
+  padding-bottom:calc(72px + env(safe-area-inset-bottom));
+  padding-top:env(safe-area-inset-top);
+  min-height:100vh;
+}
+h1,h2,h3,.display{
+  font-family:var(--font-display);
+  text-transform:uppercase;
+  letter-spacing:0.02em;
+  font-weight:600;
+}
+::-webkit-scrollbar{display:none;}
+
+/* ===== Layout ===== */
+.screen{display:none; padding:20px 18px 16px; max-width:560px; margin:0 auto; animation:fadein .25s ease;}
+.screen.active{display:block;}
+@keyframes fadein{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.topbar{
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:18px 4px 14px;
+  border-bottom:1px solid var(--line);
+  margin-bottom:18px;
+}
+.topbar .label{font-size:11px; letter-spacing:0.12em; color:var(--bone-dim); text-transform:uppercase;}
+.topbar h1{font-size:26px; margin:2px 0 0; color:var(--bone);}
+.topbar .streak{font-family:var(--font-mono); font-size:13px; color:var(--amber); text-align:right;}
+.topbar .streak b{font-size:20px; display:block; font-family:var(--font-display);}
+
+/* ===== Nav ===== */
+.navbar{
+  position:fixed; bottom:0; left:0; right:0;
+  background:rgba(21,23,26,0.96); backdrop-filter:blur(10px);
+  border-top:1px solid var(--line);
+  display:flex; justify-content:space-around;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom));
+  z-index:50;
+}
+.navbtn{
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  background:none; border:none; color:var(--bone-dim);
+  font-family:var(--font-body); font-size:10px; letter-spacing:0.04em;
+  padding:6px 10px; flex:1; max-width:90px; text-transform:uppercase;
+}
+.navbtn svg{width:22px; height:22px; stroke:var(--bone-dim); fill:none; stroke-width:1.8;}
+.navbtn.active{color:var(--chalk);}
+.navbtn.active svg{stroke:var(--chalk);}
+
+/* ===== Cards ===== */
+.card{
+  background:var(--ink-2); border:1px solid var(--line); border-radius:3px;
+  padding:16px; margin-bottom:12px;
+}
+.card-rust{border-color:var(--amber); background:linear-gradient(135deg, rgba(201,136,59,0.12), var(--ink-2));}
+.row{display:flex; justify-content:space-between; align-items:center;}
+.muted{color:var(--bone-dim); font-size:13px;}
+.eyebrow{font-size:10px; letter-spacing:0.14em; text-transform:uppercase; color:var(--chalk); margin-bottom:6px; font-weight:600;}
+
+/* ===== Buttons / Inputs ===== */
+button{font-family:var(--font-body); cursor:pointer;}
+.btn{
+  display:block; width:100%; padding:14px; border-radius:3px; border:1px solid var(--line);
+  background:var(--ink-3); color:var(--bone); font-size:15px; font-weight:600;
+  text-transform:uppercase; letter-spacing:0.04em; font-family:var(--font-display);
+}
+.btn-primary{background:var(--chalk); border-color:var(--chalk); color:var(--ink);}
+.btn-amber{background:var(--amber); border-color:var(--amber); color:var(--ink);}
+.btn-ghost{background:transparent;}
+.btn-sm{width:auto; padding:8px 14px; font-size:12px;}
+.btn:active{transform:scale(0.98);}
+.btn:disabled{opacity:0.35;}
+
+input, select{
+  width:100%; background:var(--ink-3); border:1px solid var(--line); color:var(--bone);
+  padding:12px; border-radius:3px; font-size:16px; font-family:var(--font-body); margin-bottom:12px;
+}
+label{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var(--bone-dim); display:block; margin-bottom:6px;}
+.field{margin-bottom:14px;}
+.grid2{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+
+/* ===== Onboarding ===== */
+#onboard{display:flex; align-items:center; min-height:100vh; padding:24px;}
+.ob-wrap{max-width:480px; margin:0 auto; width:100%;}
+.ob-step{display:none;}
+.ob-step.active{display:block; animation:fadein .3s ease;}
+.ob-progress{display:flex; gap:5px; margin-bottom:28px;}
+.ob-progress div{height:3px; flex:1; background:var(--line); border-radius:2px;}
+.ob-progress div.done{background:var(--chalk);}
+.ob-hero{font-size:13px; color:var(--chalk); letter-spacing:0.16em; text-transform:uppercase; margin-bottom:8px;}
+.ob-title{font-size:30px; line-height:1.15; margin:0 0 10px;}
+.ob-sub{color:var(--bone-dim); font-size:14px; margin-bottom:26px; line-height:1.5;}
+.choice{
+  display:flex; align-items:center; justify-content:space-between;
+  border:1px solid var(--line); border-radius:3px; padding:14px 16px; margin-bottom:10px;
+  background:var(--ink-2);
+}
+.choice.sel{border-color:var(--chalk); background:rgba(91,139,160,0.12);}
+.choice b{font-family:var(--font-display); text-transform:uppercase; font-size:14px;}
+.choice span{font-size:12px; color:var(--bone-dim); display:block; margin-top:2px;}
+
+/* ===== Skill tree (signature element) ===== */
+.tree-section{margin-bottom:26px;}
+.tree-head{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px; padding:0 2px;}
+.tree-head h3{font-size:16px; margin:0; color:var(--bone);}
+.tree-head .tag{font-family:var(--font-mono); font-size:11px; color:var(--bone-dim);}
+.ladder{position:relative; padding-left:28px;}
+.ladder::before{
+  content:''; position:absolute; left:9px; top:6px; bottom:6px; width:2px;
+  background:var(--line);
+}
+.rung{position:relative; padding:10px 0 10px 14px; margin-bottom:2px;}
+.rung::before{
+  content:''; position:absolute; left:-28px; top:50%; transform:translateY(-50%);
+  width:18px; height:18px; border-radius:50%; border:2px solid var(--line); background:var(--ink);
+  z-index:2;
+}
+.rung.done::before{background:var(--chalk); border-color:var(--chalk);}
+.rung.done::after{
+  content:'✓'; position:absolute; left:-25px; top:50%; transform:translateY(-50%);
+  font-size:11px; color:var(--ink); font-weight:bold; z-index:3;
+}
+.rung.current::before{background:var(--amber); border-color:var(--amber); box-shadow:0 0 0 3px rgba(201,136,59,0.25);}
+.rung.locked{opacity:0.4;}
+.rung-name{font-weight:600; font-size:14px;}
+.rung-target{font-family:var(--font-mono); font-size:12px; color:var(--bone-dim); margin-top:2px;}
+.rung.current .rung-name{color:var(--amber);}
+.rung-row{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+
+/* ===== Log screen ===== */
+.set-row{display:flex; align-items:center; gap:10px; margin-bottom:8px;}
+.set-row .set-num{font-family:var(--font-mono); color:var(--bone-dim); width:24px; font-size:13px;}
+.set-row input{margin-bottom:0; text-align:center;}
+.stepper{display:flex; align-items:center; gap:0; border:1px solid var(--line); border-radius:3px; overflow:hidden;}
+.stepper button{background:var(--ink-3); border:none; color:var(--bone); width:38px; height:42px; font-size:18px;}
+.stepper input{border:none; text-align:center; border-radius:0; margin-bottom:0; -moz-appearance:textfield;}
+.stepper input::-webkit-outer-spin-button, .stepper input::-webkit-inner-spin-button{-webkit-appearance:none; margin:0;}
+
+/* ===== Misc ===== */
+.empty{text-align:center; padding:40px 20px; color:var(--bone-dim);}
+.empty .glyph{font-size:32px; margin-bottom:10px; opacity:0.5;}
+.toast{
+  position:fixed; bottom:90px; left:50%; transform:translateX(-50%) translateY(20px);
+  background:var(--bone); color:var(--ink); padding:12px 20px; border-radius:4px;
+  font-size:13px; font-weight:600; opacity:0; transition:all .3s ease; z-index:200; max-width:90%;
+  box-shadow:0 8px 24px rgba(0,0,0,0.4);
+}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.modal-bg{position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:100; display:none; align-items:flex-end;}
+.modal-bg.show{display:flex;}
+.modal{background:var(--ink-2); border-top:1px solid var(--line); border-radius:14px 14px 0 0; padding:22px 18px; width:100%; max-width:560px; margin:0 auto; max-height:85vh; overflow-y:auto;}
+.modal-handle{width:36px; height:4px; background:var(--line); border-radius:2px; margin:0 auto 16px;}
+.statbox{text-align:center; padding:10px 0;}
+.statbox .n{font-family:var(--font-display); font-size:28px; color:var(--chalk); display:block;}
+.statbox .l{font-size:10px; text-transform:uppercase; letter-spacing:0.1em; color:var(--bone-dim);}
+.chart-wrap{height:120px; display:flex; align-items:flex-end; gap:4px; padding:10px 0;}
+.bar{background:var(--chalk-dim); border-radius:2px 2px 0 0; flex:1; min-height:3px; position:relative;}
+.bar.peak{background:var(--chalk);}
+</style>
+</head>
+<body>
+
+<!-- ============ ONBOARDING ============ -->
+<div id="onboard">
+  <div class="ob-wrap">
+    <div class="ob-progress" id="obProgress"></div>
+
+    <div class="ob-step active" data-step="0">
+      <div class="ob-hero">Rungs · 01</div>
+      <h1 class="ob-title">Zero strength.<br>That's the start line, not a problem.</h1>
+      <p class="ob-sub">Every progression here begins from true zero. Tell us where your body is right now — this sets your first rung, not your ceiling.</p>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" id="obName" placeholder="What should we call you">
+      </div>
+      <button class="btn btn-primary" onclick="obNext()">Continue</button>
+    </div>
+
+    <div class="ob-step" data-step="1">
+      <div class="ob-hero">Rungs · 02</div>
+      <h1 class="ob-title">Your build</h1>
+      <p class="ob-sub">Used to calibrate bodyweight-ratio targets — some calisthenics benchmarks scale with your own mass.</p>
+      <div class="grid2">
+        <div class="field">
+          <label>Height (cm)</label>
+          <input type="number" id="obHeight" placeholder="175" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Weight (kg)</label>
+          <input type="number" id="obWeight" placeholder="70" inputmode="decimal">
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label>Age</label>
+          <input type="number" id="obAge" placeholder="24" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Sex</label>
+          <select id="obSex">
+            <option value="m">Male</option>
+            <option value="f">Female</option>
+            <option value="o">Other</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="obNext()">Continue</button>
+    </div>
+
+    <div class="ob-step" data-step="2">
+      <div class="ob-hero">Rungs · 03</div>
+      <h1 class="ob-title">Current capacity</h1>
+      <p class="ob-sub">Be honest, not aspirational. This is the floor we build from. Enter 0 where true — that's expected and fine.</p>
+      <div class="field">
+        <label>Strict push-ups, max reps in one go</label>
+        <input type="number" id="capPush" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Bodyweight rows or pull-ups, max reps</label>
+        <input type="number" id="capPull" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Bodyweight squats, max reps in one go</label>
+        <input type="number" id="capSquat" placeholder="0" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Plank hold, seconds</label>
+        <input type="number" id="capCore" placeholder="0" inputmode="numeric">
+      </div>
+      <button class="btn btn-primary" onclick="obNext()">Continue</button>
+    </div>
+
+    <div class="ob-step" data-step="3">
+      <div class="ob-hero">Rungs · 04</div>
+      <h1 class="ob-title">Training days</h1>
+      <p class="ob-sub">How many days a week can you realistically train? Calisthenics progress comes from consistency, not volume.</p>
+      <div class="choice" data-val="3" onclick="selChoice(this,'obDays')"><div><b>3 days / week</b><span>Full-body, more recovery</span></div></div>
+      <div class="choice" data-val="4" onclick="selChoice(this,'obDays')"><div><b>4 days / week</b><span>Upper / lower split</span></div></div>
+      <div class="choice" data-val="5" onclick="selChoice(this,'obDays')"><div><b>5+ days / week</b><span>Push / pull / legs rotation</span></div></div>
+      <input type="hidden" id="obDays" value="3">
+      <button class="btn btn-primary" onclick="finishOnboard()">Build my plan</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN APP ============ -->
+<div id="app" style="display:none;">
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div>
+        <div class="label">Today</div>
+        <h1 id="homeGreeting">Train</h1>
+      </div>
+      <div class="streak"><b id="streakNum">0</b>day streak</div>
+    </div>
+
+    <div class="card card-rust" id="levelUpBanner" style="display:none;">
+      <div class="eyebrow" style="color:var(--amber);">Ready to advance</div>
+      <div class="row" style="align-items:flex-start;">
+        <div>
+          <div style="font-weight:600; margin-bottom:2px;" id="levelUpText">—</div>
+          <div class="muted">You've hit the target for the next rung.</div>
+        </div>
+      </div>
+      <div style="margin-top:12px; display:flex; gap:8px;">
+        <button class="btn btn-amber btn-sm" onclick="confirmLevelUp()">Advance</button>
+        <button class="btn btn-ghost btn-sm" onclick="dismissLevelUp()">Not yet</button>
+      </div>
+    </div>
+
+    <div class="eyebrow">Today's session</div>
+    <div id="todaySession"></div>
+
+    <button class="btn btn-primary" style="margin-top:6px;" onclick="goLog()">Log today's workout</button>
+  </div>
+
+  <!-- PROGRESSION (skill tree) -->
+  <div class="screen" id="screen-tree">
+    <div class="topbar">
+      <div>
+        <div class="label">Your path</div>
+        <h1>Progression</h1>
+      </div>
+      <div class="streak"><b id="tierLabel">—</b>tier</div>
+    </div>
+    <div id="treeContent"></div>
+  </div>
+
+  <!-- LOG -->
+  <div class="screen" id="screen-log">
+    <div class="topbar">
+      <div>
+        <div class="label">Log workout</div>
+        <h1 id="logDate">—</h1>
+      </div>
+    </div>
+    <div id="logContent"></div>
+    <button class="btn btn-primary" style="margin-top:10px;" onclick="saveLog()">Save session</button>
+  </div>
+
+  <!-- PROGRESS / STATS -->
+  <div class="screen" id="screen-stats">
+    <div class="topbar">
+      <div>
+        <div class="label">History</div>
+        <h1>Progress</h1>
+      </div>
+    </div>
+    <div class="card">
+      <div class="grid2" style="gap:0;">
+        <div class="statbox"><span class="n" id="statSessions">0</span><span class="l">Sessions</span></div>
+        <div class="statbox"><span class="n" id="statWeight">—</span><span class="l">Current kg</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Weight trend</div>
+      <div class="chart-wrap" id="weightChart"></div>
+    </div>
+    <div class="eyebrow" style="margin:18px 0 10px 2px;">Session log</div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="screen" id="screen-profile">
+    <div class="topbar">
+      <div>
+        <div class="label">You</div>
+        <h1 id="profName">—</h1>
+      </div>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Update stats</div>
+      <div class="grid2">
+        <div class="field"><label>Weight (kg)</label><input type="number" id="profWeight"></div>
+        <div class="field"><label>Height (cm)</label><input type="number" id="profHeight"></div>
+      </div>
+      <button class="btn btn-ghost" onclick="saveProfile()">Save</button>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Training days / week</div>
+      <select id="profDays">
+        <option value="3">3 days</option>
+        <option value="4">4 days</option>
+        <option value="5">5+ days</option>
+      </select>
+      <button class="btn btn-ghost" onclick="saveProfile()">Save</button>
+    </div>
+    <div class="card">
+      <div class="eyebrow">Data</div>
+      <p class="muted">Everything is stored only on this device. Nothing is sent anywhere.</p>
+      <button class="btn btn-ghost" style="border-color:var(--rust); color:var(--rust);" onclick="resetApp()">Reset all data</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- NAV -->
+<div class="navbar" id="navbar" style="display:none;">
+  <button class="navbtn active" data-screen="home" onclick="showScreen('home')">
+    <svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9M5 10v10h14V10"/></svg>
+    Train
+  </button>
+  <button class="navbtn" data-screen="tree" onclick="showScreen('tree')">
+    <svg viewBox="0 0 24 24"><path d="M12 2v20M5 8l7-6 7 6M5 16l7 6 7-6"/></svg>
+    Path
+  </button>
+  <button class="navbtn" data-screen="stats" onclick="showScreen('stats')">
+    <svg viewBox="0 0 24 24"><path d="M4 20V10M12 20V4M20 20v-7"/></svg>
+    Progress
+  </button>
+  <button class="navbtn" data-screen="profile" onclick="showScreen('profile')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+    You
+  </button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
