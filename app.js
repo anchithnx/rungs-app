@@ -67,6 +67,113 @@ const TREES = {
   }
 };
 
+// ---------- Accessory pools ----------
+// These don't affect progression/level-ups — they round out a session
+// to feel like a real PPL-style day. Picked by current tier so a
+// beginner doesn't get handed an advanced accessory move.
+const ACCESSORIES = {
+  push: {
+    beginner: [
+      {name:'Wall Pike Push-up', type:'reps', target:10, unit:'reps'},
+      {name:'Tricep Bench Dip', type:'reps', target:12, unit:'reps'},
+      {name:'Incline Pike Push-up', type:'reps', target:10, unit:'reps'},
+      {name:'Shoulder Tap Plank', type:'reps', target:16, unit:'taps'}
+    ],
+    intermediate: [
+      {name:'Pike Push-up', type:'reps', target:12, unit:'reps'},
+      {name:'Tricep Dips (parallel bars)', type:'reps', target:12, unit:'reps'},
+      {name:'Wide-Hand Push-up', type:'reps', target:15, unit:'reps'},
+      {name:'Decline Push-up', type:'reps', target:15, unit:'reps'}
+    ],
+    advanced: [
+      {name:'Elevated Pike Push-up', type:'reps', target:10, unit:'reps'},
+      {name:'Ring/Bar Dips', type:'reps', target:12, unit:'reps'},
+      {name:'Explosive Clap Push-up', type:'reps', target:8, unit:'reps'},
+      {name:'Planche Lean Hold', type:'hold', target:15, unit:'sec'}
+    ]
+  },
+  pull: {
+    beginner: [
+      {name:'Scapular Pull (hang shrugs)', type:'reps', target:10, unit:'reps'},
+      {name:'Doorframe Row', type:'reps', target:12, unit:'reps'},
+      {name:'Towel Face Pull', type:'reps', target:12, unit:'reps'},
+      {name:'Reverse Snow Angel', type:'reps', target:12, unit:'reps'}
+    ],
+    intermediate: [
+      {name:'Wide-Grip Row', type:'reps', target:12, unit:'reps'},
+      {name:'Negative Chin-up', type:'reps', target:6, unit:'reps'},
+      {name:'Towel Pull-up Grip Hold', type:'hold', target:20, unit:'sec'},
+      {name:'Australian Pull-up', type:'reps', target:15, unit:'reps'}
+    ],
+    advanced: [
+      {name:'L-Sit Pull-up', type:'reps', target:6, unit:'reps'},
+      {name:'Weighted Row', type:'reps', target:10, unit:'reps'},
+      {name:'Commando Pull-up', type:'reps', target:8, unit:'reps'},
+      {name:'Front Lever Tuck Hold', type:'hold', target:12, unit:'sec'}
+    ]
+  },
+  legs: {
+    beginner: [
+      {name:'Glute Bridge', type:'reps', target:15, unit:'reps'},
+      {name:'Calf Raise', type:'reps', target:20, unit:'reps'},
+      {name:'Step-Up (chair height)', type:'reps', target:12, unit:'reps/side'},
+      {name:'Wall Sit', type:'hold', target:30, unit:'sec'}
+    ],
+    intermediate: [
+      {name:'Single-Leg Glute Bridge', type:'reps', target:12, unit:'reps/side'},
+      {name:'Cossack Squat', type:'reps', target:10, unit:'reps/side'},
+      {name:'Jump Squat', type:'reps', target:15, unit:'reps'},
+      {name:'Walking Lunge', type:'reps', target:16, unit:'reps'}
+    ],
+    advanced: [
+      {name:'Single-Leg Calf Raise', type:'reps', target:15, unit:'reps/side'},
+      {name:'Nordic Curl (assisted)', type:'reps', target:6, unit:'reps'},
+      {name:'Box Jump', type:'reps', target:10, unit:'reps'},
+      {name:'Deep Cossack Squat', type:'reps', target:8, unit:'reps/side'}
+    ]
+  },
+  core: {
+    beginner: [
+      {name:'Dead Bug', type:'reps', target:12, unit:'reps/side'},
+      {name:'Bird Dog', type:'reps', target:10, unit:'reps/side'},
+      {name:'Side Plank', type:'hold', target:20, unit:'sec/side'},
+      {name:'Bicycle Crunch', type:'reps', target:16, unit:'reps'}
+    ],
+    intermediate: [
+      {name:'Russian Twist', type:'reps', target:20, unit:'reps'},
+      {name:'Flutter Kicks', type:'reps', target:20, unit:'reps'},
+      {name:'Side Plank Reach-Through', type:'reps', target:10, unit:'reps/side'},
+      {name:'Mountain Climbers', type:'reps', target:20, unit:'reps'}
+    ],
+    advanced: [
+      {name:'Windshield Wiper', type:'reps', target:10, unit:'reps/side'},
+      {name:'Hanging Oblique Raise', type:'reps', target:10, unit:'reps/side'},
+      {name:'Ab Wheel Rollout', type:'reps', target:8, unit:'reps'},
+      {name:'Front Lever Raise', type:'reps', target:6, unit:'reps'}
+    ]
+  }
+};
+
+function tierKeyForTree(t){
+  // maps a tree's rung progress to beginner/intermediate/advanced for accessory selection
+  const idx = state.rungIndex[t];
+  const len = TREES[t].rungs.length;
+  const pct = idx/(len-1);
+  if(pct < 0.34) return 'beginner';
+  if(pct < 0.7) return 'intermediate';
+  return 'advanced';
+}
+
+function pickAccessories(t, count){
+  const tierKey = tierKeyForTree(t);
+  const pool = ACCESSORIES[t][tierKey];
+  // stable pseudo-random pick based on date so it doesn't reshuffle on every render today,
+  // but does vary day to day
+  const seed = todayStr().split('-').reduce((a,c)=>a+parseInt(c),0) + t.length;
+  const shuffled = pool.map((ex,i)=>({ex, k:(seed*(i+7))%pool.length})).sort((a,b)=>a.k-b.k);
+  return shuffled.slice(0, count).map(s=>s.ex);
+}
+
 const TIERS = [
   {name:'Foundation', min:0},
   {name:'Beginner', min:1},
@@ -236,7 +343,7 @@ function currentTierIndex(){
 
 // ---------- Today's session builder ----------
 function getTodayExercises(){
-  // Rotate focus based on day-count setting & day-of-week, always include core lightly.
+  // Rotate focus based on day-count setting & day-of-week.
   const days = state.profile.days;
   const dow = new Date().getDay(); // 0 sun .. 6 sat
   let groups;
@@ -249,11 +356,22 @@ function getTodayExercises(){
   }
   const idx = dow % groups.length;
   const focus = groups[idx];
-  return focus.map(t=>{
+
+  // Each focused tree contributes its main progression rung PLUS 3-4
+  // accessory moves, so a session reads as a real PPL day, not a single
+  // exercise.
+  const accCount = focus.length<=2 ? 4 : 3; // fewer trees that day -> more accessories per tree
+  const items = [];
+  focus.forEach(t=>{
     const rIdx = state.rungIndex[t];
-    const rung = TREES[t].rungs[Math.min(rIdx, TREES[t].rungs.length-1)];
-    return {tree:t, rung};
+    const mainRung = TREES[t].rungs[Math.min(rIdx, TREES[t].rungs.length-1)];
+    items.push({tree:t, kind:'main', exId:mainRung.id, name:mainRung.name, type:mainRung.type, target:mainRung.target, unit:mainRung.unit});
+    const accessories = pickAccessories(t, accCount);
+    accessories.forEach((a, i)=>{
+      items.push({tree:t, kind:'accessory', exId:`acc_${t}_${i}_${a.name.replace(/\s+/g,'_')}`, name:a.name, type:a.type, target:a.target, unit:a.unit});
+    });
   });
+  return items;
 }
 
 function renderHome(){
@@ -275,20 +393,34 @@ function renderHome(){
   const today = getTodayExercises();
   const wrap = document.getElementById('todaySession');
   wrap.innerHTML = '';
-  today.forEach(({tree,rung})=>{
-    const div = document.createElement('div');
-    div.className='card';
-    div.innerHTML = `
-      <div class="row">
-        <div>
-          <div class="eyebrow">${TREES[tree].label}</div>
-          <div style="font-weight:600;">${rung.name}</div>
-        </div>
-        <div class="muted" style="text-align:right; font-family:var(--font-mono);">
-          Target<br><b style="color:var(--bone); font-size:15px;">${rung.target} ${rung.unit}</b>
-        </div>
-      </div>`;
-    wrap.appendChild(div);
+  // group by tree so the session reads like a real PPL day with sub-headers
+  const grouped = {};
+  today.forEach(item=>{
+    if(!grouped[item.tree]) grouped[item.tree]=[];
+    grouped[item.tree].push(item);
+  });
+  Object.keys(grouped).forEach(t=>{
+    const header = document.createElement('div');
+    header.className='eyebrow';
+    header.style.marginTop='14px';
+    header.textContent = TREES[t].label;
+    wrap.appendChild(header);
+    grouped[t].forEach(item=>{
+      const div = document.createElement('div');
+      div.className='card';
+      const badge = item.kind==='main' ? '' : `<span style="font-size:10px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.06em;">Accessory</span>`;
+      div.innerHTML = `
+        <div class="row">
+          <div>
+            ${badge}
+            <div style="font-weight:600;">${item.name}</div>
+          </div>
+          <div class="muted" style="text-align:right; font-family:var(--font-mono);">
+            Target<br><b style="color:var(--bone); font-size:15px;">${item.target} ${item.unit}</b>
+          </div>
+        </div>`;
+      wrap.appendChild(div);
+    });
   });
 }
 
@@ -382,27 +514,39 @@ function goLog(){
   document.getElementById('logDate').textContent = fmtDate(todayStr());
   const wrap = document.getElementById('logContent');
   wrap.innerHTML = '';
+
+  let lastTree = null;
   currentLogExercises.forEach((item, idx)=>{
-    const {tree, rung} = item;
+    if(item.tree !== lastTree){
+      const header = document.createElement('div');
+      header.className='eyebrow';
+      header.style.margin = lastTree===null ? '0 0 8px' : '18px 0 8px';
+      header.textContent = TREES[item.tree].label;
+      wrap.appendChild(header);
+      lastTree = item.tree;
+    }
+
     const card = document.createElement('div');
     card.className='card';
-    const unitLabel = rung.type==='hold' ? 'sec' : 'reps';
+    const unitLabel = item.type==='hold' ? 'sec' : 'reps';
     let setsHtml = '';
     for(let s=0;s<3;s++){
       setsHtml += `
         <div class="set-row">
           <div class="set-num">S${s+1}</div>
           <div class="stepper" style="flex:1;">
-            <button type="button" onclick="stepVal('${tree}_${idx}_${s}', -1)">−</button>
-            <input type="number" inputmode="numeric" id="val_${tree}_${idx}_${s}" placeholder="0">
-            <button type="button" onclick="stepVal('${tree}_${idx}_${s}', 1)">+</button>
+            <button type="button" onclick="stepVal('item_${idx}_${s}', -1)">−</button>
+            <input type="number" inputmode="numeric" id="val_item_${idx}_${s}" placeholder="0">
+            <button type="button" onclick="stepVal('item_${idx}_${s}', 1)">+</button>
           </div>
           <div class="muted" style="width:34px; font-size:12px;">${unitLabel}</div>
         </div>`;
     }
+    const badge = item.kind==='accessory' ? `<span style="font-size:10px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:2px;">Accessory</span>` : '';
     card.innerHTML = `
-      <div class="eyebrow">${TREES[tree].label} · target ${rung.target} ${rung.unit}</div>
-      <div style="font-weight:600; margin-bottom:10px;">${rung.name}</div>
+      <div class="eyebrow">target ${item.target} ${item.unit}</div>
+      ${badge}
+      <div style="font-weight:600; margin-bottom:10px;">${item.name}</div>
       ${setsHtml}
     `;
     wrap.appendChild(card);
@@ -430,18 +574,17 @@ function stepVal(id, dir){
 function saveLog(){
   const entries = [];
   currentLogExercises.forEach((item, idx)=>{
-    const {tree, rung} = item;
     const sets = [];
     for(let s=0;s<3;s++){
-      const el = document.getElementById(`val_${tree}_${idx}_${s}`);
+      const el = document.getElementById(`val_item_${idx}_${s}`);
       const v = parseInt(el.value);
       if(v && v>0){
-        if(rung.type==='hold') sets.push({sec:v});
+        if(item.type==='hold') sets.push({sec:v});
         else sets.push({reps:v});
       }
     }
     if(sets.length>0){
-      entries.push({exId: rung.id, tree, sets});
+      entries.push({exId: item.exId, tree: item.tree, name: item.name, kind: item.kind, sets});
     }
   });
 
@@ -513,9 +656,9 @@ function renderStats(){
     const card = document.createElement('div');
     card.className='card';
     let lines = s.entries.map(e=>{
-      const rung = TREES[e.tree].rungs.find(r=>r.id===e.exId);
       const setsStr = e.sets.map(set=> set.reps!==undefined? set.reps : set.sec+'s').join(' / ');
-      return `<div class="row" style="padding:4px 0; font-size:13px;"><span class="muted">${rung?rung.name:e.exId}</span><span style="font-family:var(--font-mono);">${setsStr}</span></div>`;
+      const label = e.name || e.exId;
+      return `<div class="row" style="padding:4px 0; font-size:13px;"><span class="muted">${label}</span><span style="font-family:var(--font-mono);">${setsStr}</span></div>`;
     }).join('');
     card.innerHTML = `<div class="eyebrow">${fmtDate(s.date)}</div>${lines}`;
     hist.appendChild(card);
