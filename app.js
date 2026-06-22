@@ -374,6 +374,9 @@ function getTodayExercises(){
   return items;
 }
 
+let currentLogExercises = [];
+let checkedState = {}; // idx -> {checked:bool, value:number}
+
 function renderHome(){
   document.getElementById('homeGreeting').textContent = `Hey, ${state.profile.name}`;
   document.getElementById('streakNum').textContent = state.streak;
@@ -383,45 +386,78 @@ function renderHome(){
   const banner = document.getElementById('levelUpBanner');
   if(state.pendingLevelUp){
     const t = state.pendingLevelUp;
-    const rung = TREES[t].rungs[state.rungIndex[t]];
     document.getElementById('levelUpText').textContent = `${TREES[t].label}: unlock "${TREES[t].rungs[state.rungIndex[t]+1] ? TREES[t].rungs[state.rungIndex[t]+1].name : 'Mastery'}"`;
     banner.style.display='block';
   } else {
     banner.style.display='none';
   }
 
-  const today = getTodayExercises();
+  // Re-roll today's exercises only if we don't already have an in-progress
+  // checklist for today (so checking boxes doesn't reshuffle accessories mid-session)
+  const today = todayStr();
+  if(!state._homeDraftDate || state._homeDraftDate !== today){
+    currentLogExercises = getTodayExercises();
+    checkedState = {};
+    currentLogExercises.forEach((item,idx)=>{ checkedState[idx] = {checked:false, value:null}; });
+    state._homeDraftDate = today;
+  }
+
+  renderChecklist();
+}
+
+function renderChecklist(){
   const wrap = document.getElementById('todaySession');
   wrap.innerHTML = '';
-  // group by tree so the session reads like a real PPL day with sub-headers
-  const grouped = {};
-  today.forEach(item=>{
-    if(!grouped[item.tree]) grouped[item.tree]=[];
-    grouped[item.tree].push(item);
+  let lastTree = null;
+  currentLogExercises.forEach((item, idx)=>{
+    if(item.tree !== lastTree){
+      const header = document.createElement('div');
+      header.className='tree-group-header';
+      header.textContent = TREES[item.tree].label;
+      wrap.appendChild(header);
+      lastTree = item.tree;
+    }
+    const cs = checkedState[idx];
+    const unitLabel = item.type==='hold' ? 'sec' : 'reps';
+    const card = document.createElement('div');
+    card.className = 'ex-card' + (cs.checked ? ' checked' : '');
+    card.innerHTML = `
+      <div class="ex-check ${cs.checked?'on':''}" onclick="toggleCheck(${idx})">${cs.checked?'✓':''}</div>
+      <div class="ex-body">
+        ${item.kind==='accessory' ? `<span class="ex-badge">Accessory</span>` : ''}
+        <div class="ex-name">${item.name}</div>
+        <div class="ex-target">target ${item.target} ${item.unit}</div>
+      </div>
+      <input class="ex-input" type="number" inputmode="numeric" placeholder="${unitLabel}"
+        value="${cs.value!==null?cs.value:''}"
+        onchange="setVal(${idx}, this.value)" onclick="event.stopPropagation()">
+    `;
+    wrap.appendChild(card);
   });
-  Object.keys(grouped).forEach(t=>{
-    const header = document.createElement('div');
-    header.className='eyebrow';
-    header.style.marginTop='14px';
-    header.textContent = TREES[t].label;
-    wrap.appendChild(header);
-    grouped[t].forEach(item=>{
-      const div = document.createElement('div');
-      div.className='card';
-      const badge = item.kind==='main' ? '' : `<span style="font-size:10px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.06em;">Accessory</span>`;
-      div.innerHTML = `
-        <div class="row">
-          <div>
-            ${badge}
-            <div style="font-weight:600;">${item.name}</div>
-          </div>
-          <div class="muted" style="text-align:right; font-family:var(--font-mono);">
-            Target<br><b style="color:var(--bone); font-size:15px;">${item.target} ${item.unit}</b>
-          </div>
-        </div>`;
-      wrap.appendChild(div);
-    });
-  });
+  updateSessionCount();
+}
+
+function toggleCheck(idx){
+  const cs = checkedState[idx];
+  cs.checked = !cs.checked;
+  if(cs.checked && (cs.value===null || cs.value==='')){
+    // default to the target value if nothing entered yet, so a checked box always has a number
+    cs.value = currentLogExercises[idx].target;
+  }
+  renderChecklist();
+}
+function setVal(idx, v){
+  const n = parseInt(v);
+  checkedState[idx].value = (v==='') ? null : (isNaN(n)?null:n);
+  if(checkedState[idx].value!==null && checkedState[idx].value>0){
+    checkedState[idx].checked = true;
+  }
+  renderChecklist();
+}
+function updateSessionCount(){
+  const total = currentLogExercises.length;
+  const done = Object.values(checkedState).filter(c=>c.checked).length;
+  document.getElementById('sessionCount').textContent = `${done} / ${total} done`;
 }
 
 function checkLevelUps(){
@@ -507,89 +543,19 @@ function renderTree(){
   });
 }
 
-// ---------- Log screen ----------
-let currentLogExercises = [];
-function goLog(){
-  currentLogExercises = getTodayExercises();
-  document.getElementById('logDate').textContent = fmtDate(todayStr());
-  const wrap = document.getElementById('logContent');
-  wrap.innerHTML = '';
-
-  let lastTree = null;
-  currentLogExercises.forEach((item, idx)=>{
-    if(item.tree !== lastTree){
-      const header = document.createElement('div');
-      header.className='eyebrow';
-      header.style.margin = lastTree===null ? '0 0 8px' : '18px 0 8px';
-      header.textContent = TREES[item.tree].label;
-      wrap.appendChild(header);
-      lastTree = item.tree;
-    }
-
-    const card = document.createElement('div');
-    card.className='card';
-    const unitLabel = item.type==='hold' ? 'sec' : 'reps';
-    let setsHtml = '';
-    for(let s=0;s<3;s++){
-      setsHtml += `
-        <div class="set-row">
-          <div class="set-num">S${s+1}</div>
-          <div class="stepper" style="flex:1;">
-            <button type="button" onclick="stepVal('item_${idx}_${s}', -1)">−</button>
-            <input type="number" inputmode="numeric" id="val_item_${idx}_${s}" placeholder="0">
-            <button type="button" onclick="stepVal('item_${idx}_${s}', 1)">+</button>
-          </div>
-          <div class="muted" style="width:34px; font-size:12px;">${unitLabel}</div>
-        </div>`;
-    }
-    const badge = item.kind==='accessory' ? `<span style="font-size:10px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:2px;">Accessory</span>` : '';
-    card.innerHTML = `
-      <div class="eyebrow">target ${item.target} ${item.unit}</div>
-      ${badge}
-      <div style="font-weight:600; margin-bottom:10px;">${item.name}</div>
-      ${setsHtml}
-    `;
-    wrap.appendChild(card);
-  });
-
-  // bodyweight quick-log
-  const wcard = document.createElement('div');
-  wcard.className='card';
-  wcard.innerHTML = `
-    <div class="eyebrow">Bodyweight today (optional)</div>
-    <input type="number" id="logWeight" placeholder="kg" inputmode="decimal" value="${state.profile.weight||''}">
-  `;
-  wrap.appendChild(wcard);
-
-  showScreen('log');
-}
-
-function stepVal(id, dir){
-  const el = document.getElementById('val_'+id);
-  let v = parseInt(el.value)||0;
-  v = Math.max(0, v+dir);
-  el.value = v;
-}
-
+// ---------- Complete session (was the separate Log screen; now inline on Train) ----------
 function saveLog(){
   const entries = [];
   currentLogExercises.forEach((item, idx)=>{
-    const sets = [];
-    for(let s=0;s<3;s++){
-      const el = document.getElementById(`val_item_${idx}_${s}`);
-      const v = parseInt(el.value);
-      if(v && v>0){
-        if(item.type==='hold') sets.push({sec:v});
-        else sets.push({reps:v});
-      }
-    }
-    if(sets.length>0){
+    const cs = checkedState[idx];
+    if(cs.checked && cs.value!==null && cs.value>0){
+      const sets = item.type==='hold' ? [{sec:cs.value}] : [{reps:cs.value}];
       entries.push({exId: item.exId, tree: item.tree, name: item.name, kind: item.kind, sets});
     }
   });
 
   if(entries.length===0){
-    showToast('Log at least one set to save.');
+    showToast('Check off at least one exercise to save.');
     return;
   }
 

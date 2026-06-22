@@ -16,9 +16,14 @@ anywhere, there's no backend, no login.
 - Each day it builds your session from your current rung on each ladder,
   rotated based on how many days/week you train (3 = full body, 4 = upper/
   lower split, 5+ = push/pull/legs rotation).
-- Log your sets — when you've hit the rung's target across recent
-  sessions, the app flags "ready to advance." You confirm — you stay in
-  control of when you level up, the app just tells you when you've earned it.
+- All 5-6 of today's exercises (your main progression move + accessories)
+  show as a checklist right on the Train tab. Tap the circle to check one
+  off — it auto-fills the target number. Tap the number box to type your
+  actual reps/seconds instead. One "Complete Session" button at the
+  bottom saves everything at once.
+- When you've hit the rung's target across recent sessions, the app flags
+  "ready to advance." You confirm — you stay in control of when you level
+  up, the app just tells you when you've earned it.
 - Tracks streak, full session history, and a bodyweight trend chart.
 
 ## How to get it on your phone (no app store needed)
