@@ -6,6 +6,144 @@
 
 const STORE_KEY = 'rungs_v1';
 
+// ---------- Stick-figure pose diagrams ----------
+// Small, fast, fully-offline SVG illustrations for each movement.
+// A handful of reusable pose primitives covers every exercise in
+// the database — composed below.
+const POSE = (()=>{
+  const STROKE = '#EDE9E1', ACCENT = '#5B8BA0', SURFACE = '#33373D';
+  const limb = (x1,y1,x2,y2,c=STROKE,w=3.2)=>`<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="${w}" stroke-linecap="round"/>`;
+  const head = (cx,cy,r=6)=>`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="${STROKE}" stroke-width="3"/>`;
+  const ground = (y)=>`<line x1="5" y1="${y}" x2="95" y2="${y}" stroke="${SURFACE}" stroke-width="2"/>`;
+  const wall = (x)=>`<line x1="${x}" y1="5" x2="${x}" y2="95" stroke="${SURFACE}" stroke-width="2"/>`;
+  const bar = (y,x1=30,x2=70)=>`<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="${ACCENT}" stroke-width="4" stroke-linecap="round"/>`;
+  const dot = (x,y,r=2.5,c=ACCENT)=>`<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`;
+  const wrap = (inner)=>`<svg viewBox="0 0 100 100" width="100%" height="100%">${inner}</svg>`;
+
+  const poses = {
+    standing: ()=>wrap(`${ground(88)}${head(50,22)}${limb(50,28,50,60)}${limb(50,60,42,86)}${limb(50,60,58,86)}${limb(50,34,38,50)}${limb(50,34,62,50)}`),
+    pushup_top: ()=>wrap(`${ground(84)}${head(16,68)}${limb(22,70,78,76)}${limb(30,71,26,84)}${limb(68,75,72,84)}${limb(40,72,36,52)}${limb(60,74,64,54)}`),
+    pushup_bottom: ()=>wrap(`${ground(84)}${head(16,78)}${limb(22,80,78,80)}${limb(30,80,26,84)}${limb(68,80,72,84)}${limb(38,80,30,64)}${limb(60,80,68,64)}`),
+    incline_push: ()=>wrap(`${ground(88)}${wall(78)}${head(70,40)}${limb(70,46,34,68)}${limb(70,46,75,60)}${limb(34,68,28,86)}${limb(34,68,42,86)}`),
+    pike: ()=>wrap(`${ground(88)}${head(50,46)}${limb(50,52,50,68)}${limb(50,68,36,86)}${limb(50,68,64,86)}${limb(50,56,30,72)}${limb(50,56,70,72)}`),
+    chair_dip: ()=>wrap(`${ground(86)}<rect x="58" y="64" width="26" height="5" fill="${SURFACE}"/>${head(24,44)}${limb(28,48,56,66)}${limb(56,66,72,64)}${limb(28,48,18,72)}${limb(18,72,32,82)}${limb(56,66,48,86)}`),
+    dead_hang: ()=>wrap(`${bar(14)}${dot(50,14)}${head(50,28)}${limb(50,34,40,16)}${limb(50,34,60,16)}${limb(50,34,50,62)}${limb(50,62,44,86)}${limb(50,62,56,86)}`),
+    pullup_top: ()=>wrap(`${bar(14)}${head(50,20)}${limb(50,26,40,16)}${limb(50,26,60,16)}${limb(50,26,50,52)}${limb(50,52,42,80)}${limb(50,52,58,80)}`),
+    row: ()=>wrap(`${bar(18)}${head(78,30)}${limb(74,34,34,52)}${limb(74,34,80,20)}${limb(34,52,24,72)}${limb(34,52,44,76)}${limb(50,46,40,34)}`),
+    squat_top: ()=>wrap(`${ground(88)}${head(50,22)}${limb(50,28,50,56)}${limb(50,56,38,86)}${limb(50,56,62,86)}${limb(50,36,36,48)}${limb(50,36,64,48)}`),
+    squat_bottom: ()=>wrap(`${ground(86)}${head(50,48)}${limb(50,54,50,66)}${limb(50,66,30,68)}${limb(30,68,26,86)}${limb(50,66,70,68)}${limb(70,68,74,86)}${limb(50,58,32,50)}${limb(50,58,68,50)}`),
+    pistol: ()=>wrap(`${ground(86)}${head(42,40)}${limb(42,46,44,62)}${limb(44,62,28,64)}${limb(28,64,22,86)}${limb(44,62,78,78)}${limb(78,78,80,86)}${limb(42,50,26,58)}${limb(42,50,58,38)}`),
+    lunge: ()=>wrap(`${ground(88)}${head(46,28)}${limb(46,34,48,58)}${limb(48,58,30,86)}${limb(48,58,68,72)}${limb(68,72,72,86)}${limb(46,40,34,52)}${limb(46,40,58,52)}`),
+    glute_bridge: ()=>wrap(`${ground(84)}${head(20,78)}${limb(25,78,52,58)}${limb(52,58,72,78)}${limb(72,78,72,84)}${limb(52,58,52,84)}${limb(25,78,14,76)}`),
+    plank: ()=>wrap(`${ground(80)}${head(20,60)}${limb(26,62,72,70)}${limb(40,40,40,80)}${limb(26,62,30,80)}${limb(72,70,78,80)}`),
+    hollow_body: ()=>wrap(`${ground(80)}${head(24,58)}${limb(28,60,55,70)}${limb(55,70,76,62)}${limb(28,60,16,68)}`),
+    leg_raise: ()=>wrap(`${ground(84)}${head(18,78)}${limb(24,80,58,80)}${limb(58,80,76,38)}${limb(24,80,15,84)}`),
+    hanging_knee: ()=>wrap(`${bar(14)}${head(50,26)}${limb(50,32,40,16)}${limb(50,32,60,16)}${limb(50,32,52,56)}${limb(52,56,40,64)}${limb(52,56,64,64)}`),
+    vup: ()=>wrap(`${ground(84)}${head(34,58)}${limb(38,60,55,68)}${limb(55,68,72,46)}${limb(38,60,30,42)}`),
+    lsit: ()=>wrap(`${ground(82)}${head(28,52)}${limb(32,54,46,66)}${limb(46,66,38,80)}${limb(46,66,76,62)}${limb(32,54,24,76)}`),
+    side_plank: ()=>wrap(`${ground(80)}${head(22,58)}${limb(26,60,68,66)}${limb(40,30,40,66)}${limb(68,66,76,80)}${limb(26,60,30,80)}`),
+    twist: ()=>wrap(`${ground(84)}${head(50,30)}${limb(50,36,50,64)}${limb(50,64,40,86)}${limb(50,64,60,86)}${limb(50,44,30,52)}${limb(50,44,70,36)}`),
+    bird_dog: ()=>wrap(`${ground(80)}${head(72,60)}${limb(68,62,38,68)}${limb(38,68,18,52)}${limb(38,68,42,86)}${limb(68,62,72,86)}`),
+    dead_bug: ()=>wrap(`${ground(86)}${head(50,80)}${limb(54,80,54,62)}${limb(54,62,32,52)}${limb(54,62,76,40)}${limb(54,80,40,82)}${limb(54,80,74,60)}`),
+    mountain_climber: ()=>wrap(`${ground(82)}${head(22,62)}${limb(28,64,68,72)}${limb(28,64,32,82)}${limb(68,72,76,82)}${limb(50,68,38,52)}`),
+    wall_sit: ()=>wrap(`${ground(88)}${wall(76)}${head(64,40)}${limb(64,46,64,62)}${limb(64,62,42,62)}${limb(42,62,40,86)}${limb(64,62,64,86)}`),
+    calf_raise: ()=>wrap(`${ground(86)}${head(50,22)}${limb(50,28,50,54)}${limb(50,54,40,80)}${limb(50,54,60,80)}<ellipse cx="40" cy="84" rx="7" ry="2.5" fill="${SURFACE}"/><ellipse cx="60" cy="84" rx="7" ry="2.5" fill="${SURFACE}"/>${limb(40,80,40,84,SURFACE,2)}${limb(60,80,60,84,SURFACE,2)}`),
+  };
+  return poses;
+})();
+
+const EXERCISE_POSE = {
+  'Wall Push-up': 'incline_push',
+  'Incline Push-up': 'incline_push',
+  'Knee Push-up': 'pushup_bottom',
+  'Full Push-up': 'pushup_bottom',
+  'Diamond Push-up': 'pushup_bottom',
+  'Archer Push-up': 'pushup_bottom',
+  'Pseudo Planche Push-up': 'pushup_bottom',
+  'One-Arm Push-up (assisted)': 'pushup_bottom',
+  'One-Arm Push-up': 'pushup_bottom',
+  'Dead Hang': 'dead_hang',
+  'Bodyweight Row (steep angle)': 'row',
+  'Bodyweight Row (horizontal)': 'row',
+  'Negative Pull-up': 'pullup_top',
+  'Pull-up': 'pullup_top',
+  'Chin-up Wide Variations': 'pullup_top',
+  'Archer Pull-up': 'pullup_top',
+  'Typewriter Pull-up': 'pullup_top',
+  'One-Arm Pull-up (assisted)': 'pullup_top',
+  'Bodyweight Squat': 'squat_bottom',
+  'Split Squat': 'lunge',
+  'Bulgarian Split Squat': 'lunge',
+  'Assisted Pistol Squat': 'pistol',
+  'Shrimp Squat': 'pistol',
+  'Pistol Squat': 'pistol',
+  'Jumping Pistol Squat': 'pistol',
+  'Weighted Pistol Squat': 'pistol',
+  'Plank Hold': 'plank',
+  'Hollow Body Hold': 'hollow_body',
+  'Lying Leg Raise': 'leg_raise',
+  'Hanging Knee Raise': 'hanging_knee',
+  'Hanging Leg Raise': 'hanging_knee',
+  'V-Up': 'vup',
+  'Toes-to-Bar': 'hanging_knee',
+  'Dragon Flag (negative)': 'lsit',
+  'L-Sit Hold': 'lsit',
+  'Wall Pike Push-up': 'pike',
+  'Chair Tricep Dip': 'chair_dip',
+  'Incline Pike Push-up': 'pike',
+  'Shoulder Tap Plank': 'plank',
+  'Pike Push-up': 'pike',
+  'Close-Grip Push-up': 'pushup_bottom',
+  'Wide-Hand Push-up': 'pushup_bottom',
+  'Decline Push-up (feet on chair)': 'incline_push',
+  'Elevated Pike Push-up': 'pike',
+  'Chair Dips (feet elevated)': 'chair_dip',
+  'Explosive Clap Push-up': 'pushup_top',
+  'Planche Lean Hold': 'pushup_top',
+  'Scapular Pull (hang shrugs)': 'dead_hang',
+  'Doorframe Row': 'row',
+  'Towel Face Pull': 'row',
+  'Reverse Snow Angel': 'bird_dog',
+  'Wide-Grip Row': 'row',
+  'Negative Chin-up': 'pullup_top',
+  'Towel Pull-up Grip Hold': 'dead_hang',
+  'Australian Pull-up': 'row',
+  'L-Sit Pull-up': 'pullup_top',
+  'Weighted Row': 'row',
+  'Commando Pull-up': 'pullup_top',
+  'Front Lever Tuck Hold': 'hanging_knee',
+  'Glute Bridge': 'glute_bridge',
+  'Calf Raise': 'calf_raise',
+  'Step-Up (chair height)': 'lunge',
+  'Wall Sit': 'wall_sit',
+  'Single-Leg Glute Bridge': 'glute_bridge',
+  'Cossack Squat': 'lunge',
+  'Jump Squat': 'squat_bottom',
+  'Walking Lunge': 'lunge',
+  'Single-Leg Calf Raise': 'calf_raise',
+  'Nordic Curl (assisted)': 'plank',
+  'Broad Jump': 'squat_bottom',
+  'Deep Cossack Squat': 'lunge',
+  'Dead Bug': 'dead_bug',
+  'Bird Dog': 'bird_dog',
+  'Side Plank': 'side_plank',
+  'Bicycle Crunch': 'twist',
+  'Russian Twist': 'twist',
+  'Flutter Kicks': 'leg_raise',
+  'Side Plank Reach-Through': 'side_plank',
+  'Mountain Climbers': 'mountain_climber',
+  'Windshield Wiper': 'hollow_body',
+  'Hanging Oblique Raise': 'hanging_knee',
+  'Plank Walkout': 'plank',
+  'Front Lever Raise': 'hanging_knee',
+};
+
+function poseSvg(exerciseName){
+  const key = EXERCISE_POSE[exerciseName] || 'standing';
+  const fn = POSE[key] || POSE.standing;
+  return fn();
+}
+
 // ---------- Exercise progression trees ----------
 // Each rung has: name, target description, and the test to clear it.
 // type: 'reps' (max reps in one set) or 'hold' (seconds) or 'manual'
@@ -75,19 +213,19 @@ const ACCESSORIES = {
   push: {
     beginner: [
       {name:'Wall Pike Push-up', type:'reps', target:10, unit:'reps'},
-      {name:'Tricep Bench Dip', type:'reps', target:12, unit:'reps'},
+      {name:'Chair Tricep Dip', type:'reps', target:12, unit:'reps'},
       {name:'Incline Pike Push-up', type:'reps', target:10, unit:'reps'},
       {name:'Shoulder Tap Plank', type:'reps', target:16, unit:'taps'}
     ],
     intermediate: [
       {name:'Pike Push-up', type:'reps', target:12, unit:'reps'},
-      {name:'Tricep Dips (parallel bars)', type:'reps', target:12, unit:'reps'},
+      {name:'Close-Grip Push-up', type:'reps', target:14, unit:'reps'},
       {name:'Wide-Hand Push-up', type:'reps', target:15, unit:'reps'},
-      {name:'Decline Push-up', type:'reps', target:15, unit:'reps'}
+      {name:'Decline Push-up (feet on chair)', type:'reps', target:15, unit:'reps'}
     ],
     advanced: [
       {name:'Elevated Pike Push-up', type:'reps', target:10, unit:'reps'},
-      {name:'Ring/Bar Dips', type:'reps', target:12, unit:'reps'},
+      {name:'Chair Dips (feet elevated)', type:'reps', target:12, unit:'reps'},
       {name:'Explosive Clap Push-up', type:'reps', target:8, unit:'reps'},
       {name:'Planche Lean Hold', type:'hold', target:15, unit:'sec'}
     ]
@@ -128,7 +266,7 @@ const ACCESSORIES = {
     advanced: [
       {name:'Single-Leg Calf Raise', type:'reps', target:15, unit:'reps/side'},
       {name:'Nordic Curl (assisted)', type:'reps', target:6, unit:'reps'},
-      {name:'Box Jump', type:'reps', target:10, unit:'reps'},
+      {name:'Broad Jump', type:'reps', target:10, unit:'reps'},
       {name:'Deep Cossack Squat', type:'reps', target:8, unit:'reps/side'}
     ]
   },
@@ -148,7 +286,7 @@ const ACCESSORIES = {
     advanced: [
       {name:'Windshield Wiper', type:'reps', target:10, unit:'reps/side'},
       {name:'Hanging Oblique Raise', type:'reps', target:10, unit:'reps/side'},
-      {name:'Ab Wheel Rollout', type:'reps', target:8, unit:'reps'},
+      {name:'Plank Walkout', type:'reps', target:8, unit:'reps'},
       {name:'Front Lever Raise', type:'reps', target:6, unit:'reps'}
     ]
   }
@@ -190,11 +328,13 @@ function defaultState(){
     profile: { name:'', height:null, weight:null, age:null, sex:'m', days:3 },
     rungIndex: { push:0, pull:0, legs:0, core:0 },
     cleared: { push:[], pull:[], legs:[], core:[] },
+    advancementLog: [], // {date, tree, rungId} — every time a rung is cleared, timestamped
     sessions: [], // {date, entries:[{exId, sets:[{reps|sec}]}]}
     weightLog: [], // {date, weight}
     streak: 0,
     lastSessionDate: null,
-    pendingLevelUp: null
+    pendingLevelUp: null,
+    startDate: todayStr()
   };
 }
 
@@ -204,6 +344,16 @@ function load(){
     if(raw) state = JSON.parse(raw);
     else state = null;
   }catch(e){ state = null; }
+  if(state) migrateState();
+}
+function migrateState(){
+  // backfill fields added in later versions so existing saved progress
+  // never breaks when the app is updated
+  if(!state.advancementLog) state.advancementLog = [];
+  if(!state.startDate){
+    // best guess: earliest session date, or today if no sessions yet
+    state.startDate = state.sessions.length>0 ? state.sessions[0].date : todayStr();
+  }
 }
 function save(){
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
@@ -326,6 +476,7 @@ function showScreen(name){
   document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
   document.querySelector(`.navbtn[data-screen="${name}"]`).classList.add('active');
   if(name==='tree') renderTree();
+  if(name==='roadmap') renderRoadmap();
   if(name==='stats') renderStats();
   if(name==='profile') renderProfile();
   if(name==='home') renderHome();
@@ -423,6 +574,7 @@ function renderChecklist(){
     card.className = 'ex-card' + (cs.checked ? ' checked' : '');
     card.innerHTML = `
       <div class="ex-check ${cs.checked?'on':''}" onclick="toggleCheck(${idx})">${cs.checked?'✓':''}</div>
+      <div class="ex-pose" onclick="event.stopPropagation(); showPoseModal('${item.name.replace(/'/g,"\\'")}')">${poseSvg(item.name)}</div>
       <div class="ex-body">
         ${item.kind==='accessory' ? `<span class="ex-badge">Accessory</span>` : ''}
         <div class="ex-name">${item.name}</div>
@@ -435,6 +587,22 @@ function renderChecklist(){
     wrap.appendChild(card);
   });
   updateSessionCount();
+}
+
+function showPoseModal(name){
+  const modal = document.getElementById('modalContent');
+  modal.innerHTML = `
+    <div class="modal-handle"></div>
+    <div style="display:flex; justify-content:center; margin-bottom:14px;">
+      <div style="width:160px; height:160px;">${poseSvg(name)}</div>
+    </div>
+    <div style="text-align:center; font-weight:600; font-family:var(--font-display); text-transform:uppercase; letter-spacing:0.03em; font-size:16px; margin-bottom:18px;">${name}</div>
+    <button class="btn btn-ghost" onclick="closeModal()">Close</button>
+  `;
+  document.getElementById('modalBg').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('modalBg').classList.remove('show');
 }
 
 function toggleCheck(idx){
@@ -494,7 +662,9 @@ function hasMetTarget(tree, rung){
 function confirmLevelUp(){
   const t = state.pendingLevelUp;
   if(!t) return;
-  state.cleared[t].push(TREES[t].rungs[state.rungIndex[t]].id);
+  const clearedId = TREES[t].rungs[state.rungIndex[t]].id;
+  state.cleared[t].push(clearedId);
+  state.advancementLog.push({date: todayStr(), tree: t, rungId: clearedId});
   if(state.rungIndex[t] < TREES[t].rungs.length-1){
     state.rungIndex[t]++;
   }
@@ -509,7 +679,172 @@ function dismissLevelUp(){
   renderHome();
 }
 
-// ---------- Progression tree screen ----------
+// ---------- Roadmap screen ----------
+function totalRungSteps(){
+  // max possible sum of rungIndex across all trees (full mastery)
+  return Object.keys(TREES).reduce((sum,t)=>sum + (TREES[t].rungs.length-1), 0);
+}
+function currentRungSteps(){
+  return Object.values(state.rungIndex).reduce((a,b)=>a+b,0);
+}
+function daysBetween(d1,d2){
+  return Math.round((new Date(d2+'T00:00:00') - new Date(d1+'T00:00:00')) / 86400000);
+}
+function computePace(){
+  // rungs cleared per week, based on advancementLog history.
+  // Falls back gracefully when there's not enough history yet.
+  const log = state.advancementLog;
+  if(log.length < 2){
+    return {rungsPerWeek: null, sampleSize: log.length};
+  }
+  const first = log[0].date;
+  const last = log[log.length-1].date;
+  const days = Math.max(1, daysBetween(first, last));
+  const weeks = days/7;
+  const rungsPerWeek = log.length / weeks;
+  return {rungsPerWeek, sampleSize: log.length};
+}
+function projectDateForSteps(stepsAhead, rungsPerWeek){
+  if(!rungsPerWeek || rungsPerWeek<=0) return null;
+  const weeksAhead = stepsAhead / rungsPerWeek;
+  const d = new Date();
+  d.setDate(d.getDate() + Math.round(weeksAhead*7));
+  return d;
+}
+function fmtMonthYear(d){
+  return d.toLocaleDateString('en-US', {month:'short', year:'numeric'});
+}
+
+function renderRoadmap(){
+  const wrap = document.getElementById('roadmapContent');
+  wrap.innerHTML = '';
+
+  const cur = currentRungSteps();
+  const max = totalRungSteps();
+  const pct = Math.min(100, Math.round((cur/max)*100));
+  const pace = computePace();
+  const daysTraining = Math.max(1, daysBetween(state.startDate, todayStr()));
+
+  // ---- summary card ----
+  const summary = document.createElement('div');
+  summary.className = 'card';
+  summary.innerHTML = `
+    <div class="eyebrow">Since you started</div>
+    <div class="row" style="align-items:baseline;">
+      <div style="font-family:var(--font-display); font-size:30px;">${daysTraining} <span style="font-size:14px; color:var(--bone-dim); text-transform:uppercase;">days</span></div>
+      <div style="text-align:right;">
+        <div style="font-family:var(--font-mono); color:var(--chalk); font-size:20px;">${cur}<span style="color:var(--bone-dim); font-size:13px;"> / ${max}</span></div>
+        <div class="muted" style="font-size:11px;">rungs climbed</div>
+      </div>
+    </div>
+  `;
+  wrap.appendChild(summary);
+
+  // ---- visual progress bar across tiers ----
+  const tierCard = document.createElement('div');
+  tierCard.className = 'card';
+  tierCard.innerHTML = `<div class="eyebrow">Tier progress</div>`;
+  const barWrap = document.createElement('div');
+  barWrap.style.position = 'relative';
+  barWrap.style.margin = '18px 4px 8px';
+  barWrap.style.height = '6px';
+  barWrap.style.background = 'var(--line)';
+  barWrap.style.borderRadius = '3px';
+
+  const fill = document.createElement('div');
+  fill.style.position = 'absolute';
+  fill.style.left = '0'; fill.style.top='0'; fill.style.height='100%';
+  fill.style.width = pct+'%';
+  fill.style.background = 'var(--chalk)';
+  fill.style.borderRadius = '3px';
+  barWrap.appendChild(fill);
+
+  // tier markers
+  TIERS.forEach(tier=>{
+    const tierPct = Math.min(100, (tier.min/max)*100);
+    const marker = document.createElement('div');
+    marker.style.position='absolute';
+    marker.style.left = tierPct+'%';
+    marker.style.top = '-5px';
+    marker.style.width='3px'; marker.style.height='16px';
+    marker.style.background = cur>=tier.min ? 'var(--amber)' : 'var(--bone-dim)';
+    marker.style.borderRadius='2px';
+    marker.style.transform='translateX(-1.5px)';
+    barWrap.appendChild(marker);
+  });
+  tierCard.appendChild(barWrap);
+
+  const labelsRow = document.createElement('div');
+  labelsRow.style.display='flex';
+  labelsRow.style.justifyContent='space-between';
+  labelsRow.style.marginTop='6px';
+  TIERS.forEach(tier=>{
+    const lbl = document.createElement('div');
+    lbl.style.fontSize='10px';
+    lbl.style.color = cur>=tier.min ? 'var(--amber)' : 'var(--bone-dim)';
+    lbl.style.textAlign='center';
+    lbl.style.flex='1';
+    lbl.textContent = tier.name;
+    labelsRow.appendChild(lbl);
+  });
+  tierCard.appendChild(labelsRow);
+  wrap.appendChild(tierCard);
+
+  // ---- pace + projection card ----
+  const paceCard = document.createElement('div');
+  paceCard.className = 'card card-rust';
+  if(pace.rungsPerWeek===null){
+    paceCard.innerHTML = `
+      <div class="eyebrow" style="color:var(--amber);">Building your pace</div>
+      <div class="muted">Advance at least 2 rungs to unlock a projected timeline. Keep logging — the roadmap learns your actual speed, not a guess.</div>
+    `;
+  } else {
+    const currentTier = TIERS[currentTierIndex()];
+    const nextTier = TIERS[currentTierIndex()+1];
+    paceCard.innerHTML = `
+      <div class="eyebrow" style="color:var(--amber);">Your pace</div>
+      <div style="font-weight:600; margin-bottom:8px;">~${pace.rungsPerWeek.toFixed(1)} rungs cleared / week</div>
+    `;
+    if(nextTier){
+      const stepsAhead = nextTier.min - cur;
+      const projDate = projectDateForSteps(stepsAhead, pace.rungsPerWeek);
+      const projStr = projDate ? fmtMonthYear(projDate) : '—';
+      paceCard.innerHTML += `<div class="muted">At this pace, you'll reach <b style="color:var(--bone);">${nextTier.name}</b> around <b style="color:var(--bone);">${projStr}</b>.</div>`;
+    } else {
+      paceCard.innerHTML += `<div class="muted">You've reached the top tier — Elite. Keep refining toward full mastery of every movement.</div>`;
+    }
+  }
+  wrap.appendChild(paceCard);
+
+  // ---- per-tree mini roadmaps ----
+  const perTreeHeader = document.createElement('div');
+  perTreeHeader.className = 'eyebrow';
+  perTreeHeader.style.margin = '20px 2px 10px';
+  perTreeHeader.textContent = 'By movement pattern';
+  wrap.appendChild(perTreeHeader);
+
+  Object.keys(TREES).forEach(t=>{
+    const tree = TREES[t];
+    const idx = state.rungIndex[t];
+    const tmax = tree.rungs.length-1;
+    const tpct = Math.min(100, Math.round((idx/tmax)*100));
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="row" style="margin-bottom:8px;">
+        <div style="font-weight:600;">${tree.label}</div>
+        <div class="muted" style="font-family:var(--font-mono); font-size:12px;">${idx} / ${tmax}</div>
+      </div>
+      <div style="height:5px; background:var(--line); border-radius:3px; overflow:hidden;">
+        <div style="height:100%; width:${tpct}%; background:var(--chalk);"></div>
+      </div>
+      <div class="muted" style="margin-top:8px; font-size:12.5px;">Currently: ${tree.rungs[idx].name}</div>
+    `;
+    wrap.appendChild(card);
+  });
+}
+
+
 function renderTree(){
   document.getElementById('tierLabel').textContent = TIERS[currentTierIndex()].name;
   const wrap = document.getElementById('treeContent');
@@ -531,6 +866,7 @@ function renderTree(){
       rung.className=cls;
       rung.innerHTML = `
         <div class="rung-row">
+          <div class="ex-pose" style="cursor:pointer;" onclick="showPoseModal('${r.name.replace(/'/g,"\\'")}')">${poseSvg(r.name)}</div>
           <div>
             <div class="rung-name">${r.name}</div>
             <div class="rung-target">${r.target} ${r.unit}</div>

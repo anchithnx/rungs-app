@@ -13,17 +13,30 @@ anywhere, there's no backend, no login.
 - Four progression "ladders": Push, Pull, Legs, Core — each with 8-9 rungs
   from absolute basics (wall push-up, dead hang) up to advanced skills
   (one-arm push-up, archer pull-up, pistol squat, L-sit).
+- **Everything is doorway-pull-up-bar + floor + chair only** — no
+  benches, parallel bars, rings, ab wheels, or boxes required.
+- Every single exercise (83 total, main moves + accessories) has a
+  small stick-figure diagram so you can tell at a glance what an
+  unfamiliar move looks like. Tap any diagram for a bigger view.
 - Each day it builds your session from your current rung on each ladder,
   rotated based on how many days/week you train (3 = full body, 4 = upper/
-  lower split, 5+ = push/pull/legs rotation).
-- All 5-6 of today's exercises (your main progression move + accessories)
-  show as a checklist right on the Train tab. Tap the circle to check one
-  off — it auto-fills the target number. Tap the number box to type your
-  actual reps/seconds instead. One "Complete Session" button at the
-  bottom saves everything at once.
-- When you've hit the rung's target across recent sessions, the app flags
-  "ready to advance." You confirm — you stay in control of when you level
-  up, the app just tells you when you've earned it.
+  lower split, 5+ = real push/pull/legs split). Each focus day gives you
+  one main progression move plus 3-4 accessory exercises, so it actually
+  feels like a full session, not one isolated move.
+- All 5-6 of today's exercises show as a checklist right on the Train
+  tab. Tap the circle to check one off — it auto-fills the target
+  number. Tap the number box to type your actual reps/seconds instead.
+  One "Complete Session" button saves everything at once.
+- When you've hit the rung's target across recent sessions, the app
+  flags "ready to advance." You confirm — you stay in control of when
+  you level up, the app just tells you when you've earned it.
+- **Roadmap tab**: a zoomed-out visual of your whole journey — total
+  rungs climbed out of all 31 across every movement, a tier progress
+  bar (Foundation → Beginner → Intermediate → Advanced → Elite), your
+  actual pace (rungs cleared per week, calculated from your real
+  logged history), and a projected date for your next tier based on
+  that pace. This is separate from the **Path** tab, which is the
+  detailed ladder view per movement.
 - Tracks streak, full session history, and a bodyweight trend chart.
 
 ## How to get it on your phone (no app store needed)
@@ -71,6 +84,13 @@ why GitHub Pages / Netlify is the real deployment path.)
 - Level-up detection looks at your best set across your last 3 logged
   sessions for that specific exercise. Hit the listed target, and it'll
   flag the level-up banner on the Train tab next time you open the app.
+- The Roadmap's pace and projection numbers only appear after you've
+  advanced at least 2 rungs — there's no honest pace to calculate before
+  that, so it shows a "building your pace" message instead of guessing.
+- A few pull exercises (archer/typewriter/one-arm pull-up work) put your
+  full bodyweight through the bar at an angle, not just straight down.
+  Make sure your doorway bar is rated for that and properly wedged before
+  progressing into them.
 
 ## Extending it later
 
