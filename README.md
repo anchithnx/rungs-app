@@ -20,7 +20,10 @@ anywhere, there's no backend, no login.
   unfamiliar move looks like. Tap any diagram for a bigger view.
 - **One muscle group per day** — Push day, Pull day, Legs day, Core day,
   rotating in that order, never combined. Each day gives 5 exercises:
-  your main progression move plus 4 fixed accessories for that tree.
+  your main progression move plus 4 fixed accessories for that tree
+  (each tree's accessory pool has 5 entries on standby, so if your main
+  move happens to match one of them by name, the app swaps in the spare
+  rather than just dropping to 4).
 - **Circuit format, 3 rounds** — instead of logging each exercise once,
   you do all 5 exercises, then repeat the full block 2 more times (3
   rounds total). Each exercise shows 3 round-dots — tap one as you

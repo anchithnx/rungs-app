@@ -138,6 +138,10 @@ const EXERCISE_POSE = {
   'Plank Walkout': 'plank',
   'Front Lever Raise': 'hanging_knee',
   'Arm Circles': 'arm_circles',
+  'Standing Wall Press': 'incline_push',
+  'Towel Shoulder Pull': 'row',
+  'Standing Knee Raise': 'hanging_knee',
+  'Standing Side Bend': 'twist',
 };
 
 function poseSvg(exerciseName){
@@ -217,7 +221,8 @@ const ACCESSORIES = {
       {name:'Knee Push-up', type:'reps', target:10, unit:'reps'},
       {name:'Incline Push-up', type:'reps', target:12, unit:'reps'},
       {name:'Wall Push-up', type:'reps', target:15, unit:'reps'},
-      {name:'Arm Circles', type:'reps', target:15, unit:'reps/dir'}
+      {name:'Arm Circles', type:'reps', target:15, unit:'reps/dir'},
+      {name:'Standing Wall Press', type:'hold', target:15, unit:'sec'}
     ],
     intermediate: [
       {name:'Pike Push-up', type:'reps', target:12, unit:'reps'},
@@ -237,7 +242,8 @@ const ACCESSORIES = {
       {name:'Dead Hang', type:'hold', target:15, unit:'sec'},
       {name:'Bodyweight Row (steep angle)', type:'reps', target:10, unit:'reps'},
       {name:'Negative Pull-up', type:'reps', target:5, unit:'reps'},
-      {name:'Doorframe Row', type:'reps', target:12, unit:'reps'}
+      {name:'Doorframe Row', type:'reps', target:12, unit:'reps'},
+      {name:'Towel Shoulder Pull', type:'reps', target:12, unit:'reps'}
     ],
     intermediate: [
       {name:'Wide-Grip Row', type:'reps', target:12, unit:'reps'},
@@ -257,7 +263,8 @@ const ACCESSORIES = {
       {name:'Bodyweight Squat', type:'reps', target:15, unit:'reps'},
       {name:'Glute Bridge', type:'reps', target:15, unit:'reps'},
       {name:'Calf Raise', type:'reps', target:20, unit:'reps'},
-      {name:'Wall Sit', type:'hold', target:20, unit:'sec'}
+      {name:'Wall Sit', type:'hold', target:20, unit:'sec'},
+      {name:'Standing Knee Raise', type:'reps', target:15, unit:'reps/side'}
     ],
     intermediate: [
       {name:'Single-Leg Glute Bridge', type:'reps', target:12, unit:'reps/side'},
@@ -277,7 +284,8 @@ const ACCESSORIES = {
       {name:'Plank Hold', type:'hold', target:20, unit:'sec'},
       {name:'Lying Leg Raise', type:'reps', target:10, unit:'reps'},
       {name:'Bicycle Crunch', type:'reps', target:14, unit:'reps'},
-      {name:'Side Plank', type:'hold', target:15, unit:'sec/side'}
+      {name:'Side Plank', type:'hold', target:15, unit:'sec/side'},
+      {name:'Standing Side Bend', type:'reps', target:15, unit:'reps/side'}
     ],
     intermediate: [
       {name:'Russian Twist', type:'reps', target:20, unit:'reps'},
