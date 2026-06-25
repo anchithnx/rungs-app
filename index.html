@@ -172,17 +172,19 @@ label{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var
   transition:border-color .2s, background .2s;
 }
 .ex-card.checked{border-color:var(--chalk); background:rgba(91,139,160,0.08);}
-.ex-check{
-  width:26px; height:26px; border-radius:50%; border:2px solid var(--line);
-  flex:0 0 26px; display:flex; align-items:center; justify-content:center;
-  background:var(--ink); font-size:14px; color:transparent;
-}
-.ex-check.on{background:var(--chalk); border-color:var(--chalk); color:var(--ink);}
 .ex-pose{
   width:46px; height:46px; flex:0 0 46px; background:var(--ink-3); border-radius:3px;
-  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  display:flex; align-items:center; justify-content:center; overflow:hidden; cursor:pointer;
 }
 .ex-pose svg{width:100%; height:100%;}
+.round-row{display:flex; gap:6px; margin-top:8px;}
+.round-dot{
+  width:26px; height:26px; border-radius:50%; border:2px solid var(--line);
+  display:flex; align-items:center; justify-content:center;
+  font-size:11px; font-family:var(--font-mono); color:var(--bone-dim);
+  background:var(--ink); cursor:pointer; flex:0 0 26px;
+}
+.round-dot.on{background:var(--chalk); border-color:var(--chalk); color:var(--ink); font-weight:700;}
 .ex-body{flex:1; min-width:0;}
 .ex-name{font-weight:600; font-size:14.5px; line-height:1.3;}
 .ex-badge{font-size:10px; color:var(--bone-dim); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-bottom:2px;}
@@ -292,9 +294,9 @@ label{font-size:11px; text-transform:uppercase; letter-spacing:0.08em; color:var
       <div class="ob-hero">Rungs · 04</div>
       <h1 class="ob-title">Training days</h1>
       <p class="ob-sub">How many days a week can you realistically train? Calisthenics progress comes from consistency, not volume.</p>
-      <div class="choice" data-val="3" onclick="selChoice(this,'obDays')"><div><b>3 days / week</b><span>Full-body, more recovery</span></div></div>
-      <div class="choice" data-val="4" onclick="selChoice(this,'obDays')"><div><b>4 days / week</b><span>Upper / lower split</span></div></div>
-      <div class="choice" data-val="5" onclick="selChoice(this,'obDays')"><div><b>5+ days / week</b><span>Push / pull / legs rotation</span></div></div>
+      <div class="choice" data-val="3" onclick="selChoice(this,'obDays')"><div><b>3 days / week</b><span>One muscle group, then a rest day, alternating</span></div></div>
+      <div class="choice" data-val="4" onclick="selChoice(this,'obDays')"><div><b>4 days / week</b><span>Two training days, one rest, repeating</span></div></div>
+      <div class="choice" data-val="5" onclick="selChoice(this,'obDays')"><div><b>5+ days / week</b><span>Push, Pull, Legs, Core, then one rest day</span></div></div>
       <input type="hidden" id="obDays" value="3">
       <button class="btn btn-primary" onclick="finishOnboard()">Build my plan</button>
     </div>

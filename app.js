@@ -337,7 +337,9 @@ function defaultState(){
     streak: 0,
     lastSessionDate: null,
     pendingLevelUp: null,
-    startDate: todayStr()
+    startDate: todayStr(),
+    cyclePosition: 0,
+    cyclePositionDate: null
   };
 }
 
@@ -357,6 +359,12 @@ function migrateState(){
     // best guess: earliest session date, or today if no sessions yet
     state.startDate = state.sessions.length>0 ? state.sessions[0].date : todayStr();
   }
+  if(state.cyclePosition===undefined){
+    // best guess so existing users don't get reset back to Push day:
+    // count training sessions completed so far as a proxy for position
+    state.cyclePosition = state.sessions.length;
+  }
+  if(state.cyclePositionDate===undefined) state.cyclePositionDate = null;
 }
 function save(){
   localStorage.setItem(STORE_KEY, JSON.stringify(state));
@@ -496,34 +504,76 @@ function currentTierIndex(){
 }
 
 // ---------- Today's session builder ----------
-function getTodayExercises(){
-  // Rotate focus based on day-count setting & day-of-week.
-  const days = state.profile.days;
-  const dow = new Date().getDay(); // 0 sun .. 6 sat
-  let groups;
-  if(days<=3){
-    groups = [['push','pull','legs','core']]; // full body every session
-  } else if(days===4){
-    groups = [['push','core'],['pull','legs'],['push','legs'],['pull','core']];
-  } else {
-    groups = [['push'],['pull'],['legs'],['core'],['push','pull']];
-  }
-  const idx = dow % groups.length;
-  const focus = groups[idx];
+function buildSchedule(daysPerWeek){
+  // Returns an ordered array mixing tree names and 'rest', sized so the
+  // ratio of rest days roughly matches the days/week setting.
+  if(daysPerWeek>=5) return ['push','pull','legs','core','rest'];
+  if(daysPerWeek===4) return ['push','pull','rest','legs','core','rest'];
+  return ['push','rest','pull','rest','legs','rest','core','rest']; // 3 or fewer
+}
 
-  // Each focused tree contributes its main progression rung PLUS 3-4
-  // accessory moves, so a session reads as a real PPL day, not a single
-  // exercise.
-  const accCount = focus.length<=2 ? 4 : 3; // fewer trees that day -> more accessories per tree
-  const items = [];
-  focus.forEach(t=>{
-    const rIdx = state.rungIndex[t];
-    const mainRung = TREES[t].rungs[Math.min(rIdx, TREES[t].rungs.length-1)];
-    items.push({tree:t, kind:'main', exId:mainRung.id, name:mainRung.name, type:mainRung.type, target:mainRung.target, unit:mainRung.unit});
-    const accessories = pickAccessories(t, accCount, mainRung.name);
-    accessories.forEach((a, i)=>{
-      items.push({tree:t, kind:'accessory', exId:`acc_${t}_${i}_${a.name.replace(/\s+/g,'_')}`, name:a.name, type:a.type, target:a.target, unit:a.unit});
-    });
+function resolveTodaySlot(){
+  // Decides what today's schedule slot is ('rest' or a tree name) and
+  // updates state.cyclePosition / state.cyclePositionDate as needed.
+  // Model:
+  //  - cyclePositionDate is the last calendar date we "settled" on the
+  //    current cyclePosition.
+  //  - If that date is today, nothing to decide — return the same slot.
+  //  - If it's a past date, a new day has begun:
+  //      - if we were sitting on 'rest', move forward one slot (rest
+  //        consumed) and settle on today.
+  //      - if we were sitting on a training slot, only move forward if
+  //        that day's session was actually saved; otherwise stay put
+  //        (skipping a day delays a muscle group, doesn't skip it).
+  const schedule = buildSchedule(state.profile.days);
+  if(state.cyclePosition===undefined) state.cyclePosition = 0;
+  const today = todayStr();
+
+  if(state.cyclePositionDate === today){
+    return schedule[state.cyclePosition % schedule.length];
+  }
+
+  // a new day has begun relative to what we last settled on
+  let pos = state.cyclePosition % schedule.length;
+  let slot = schedule[pos];
+
+  if(slot==='rest'){
+    // We were owed a rest day. If we already showed it (settled) on a
+    // previous date, move past it now that another new day has begun.
+    // Otherwise, this is the first time landing on it — show it today.
+    if(state.cyclePositionDate !== null){
+      state.cyclePosition++;
+      pos = state.cyclePosition % schedule.length;
+      slot = schedule[pos];
+    }
+  } else {
+    // was a training slot — only advance past it if that day was logged
+    const wasLogged = state.sessions.some(s=>s.tree===slot && s.date===state.cyclePositionDate);
+    if(wasLogged){
+      state.cyclePosition++;
+      pos = state.cyclePosition % schedule.length;
+      slot = schedule[pos];
+    }
+    // else: stay on the same training slot, it's still owed
+  }
+
+  state.cyclePositionDate = today;
+  save();
+  return slot;
+}
+
+function getTodayExercises(){
+  const slot = resolveTodaySlot();
+  if(slot==='rest') return [];
+
+  const t = slot;
+  const rIdx = state.rungIndex[t];
+  const mainRung = TREES[t].rungs[Math.min(rIdx, TREES[t].rungs.length-1)];
+  const items = [{tree:t, kind:'main', exId:mainRung.id, name:mainRung.name, type:mainRung.type, target:mainRung.target, unit:mainRung.unit}];
+
+  const accessories = pickAccessories(t, 4, mainRung.name);
+  accessories.forEach((a, i)=>{
+    items.push({tree:t, kind:'accessory', exId:`acc_${t}_${i}_${a.name.replace(/\s+/g,'_')}`, name:a.name, type:a.type, target:a.target, unit:a.unit});
   });
   return items;
 }
@@ -552,7 +602,7 @@ function renderHome(){
   if(!state._homeDraftDate || state._homeDraftDate !== today){
     currentLogExercises = getTodayExercises();
     checkedState = {};
-    currentLogExercises.forEach((item,idx)=>{ checkedState[idx] = {checked:false, value:null}; });
+    currentLogExercises.forEach((item,idx)=>{ checkedState[idx] = {rounds:[false,false,false], value:null}; });
     state._homeDraftDate = today;
   }
 
@@ -562,26 +612,41 @@ function renderHome(){
 function renderChecklist(){
   const wrap = document.getElementById('todaySession');
   wrap.innerHTML = '';
-  let lastTree = null;
+
+  if(currentLogExercises.length===0){
+    wrap.innerHTML = `
+      <div class="empty">
+        <div class="glyph">○</div>
+        Rest day.<br>
+        <span class="muted">Recovery is part of the program. Back to training next time you open the app.</span>
+      </div>`;
+    document.getElementById('completeBtn').style.display = 'none';
+    document.getElementById('sessionCount').textContent = 'Rest day';
+    return;
+  }
+  document.getElementById('completeBtn').style.display = 'block';
+
+  const header = document.createElement('div');
+  header.className='tree-group-header';
+  header.textContent = TREES[currentLogExercises[0].tree].label + ' Day · 3 rounds';
+  wrap.appendChild(header);
+
   currentLogExercises.forEach((item, idx)=>{
-    if(item.tree !== lastTree){
-      const header = document.createElement('div');
-      header.className='tree-group-header';
-      header.textContent = TREES[item.tree].label;
-      wrap.appendChild(header);
-      lastTree = item.tree;
-    }
     const cs = checkedState[idx];
     const unitLabel = item.type==='hold' ? 'sec' : 'reps';
+    const roundsDone = cs.rounds.filter(r=>r).length;
     const card = document.createElement('div');
-    card.className = 'ex-card' + (cs.checked ? ' checked' : '');
+    card.className = 'ex-card' + (roundsDone===3 ? ' checked' : '');
+    const roundDots = cs.rounds.map((done, r)=>
+      `<div class="round-dot ${done?'on':''}" onclick="toggleRound(${idx},${r})">${done?'✓':r+1}</div>`
+    ).join('');
     card.innerHTML = `
-      <div class="ex-check ${cs.checked?'on':''}" onclick="toggleCheck(${idx})">${cs.checked?'✓':''}</div>
-      <div class="ex-pose" onclick="event.stopPropagation(); showPoseModal('${item.name.replace(/'/g,"\\'")}')">${poseSvg(item.name)}</div>
+      <div class="ex-pose" onclick="showPoseModal('${item.name.replace(/'/g,"\\'")}')">${poseSvg(item.name)}</div>
       <div class="ex-body">
         ${item.kind==='accessory' ? `<span class="ex-badge">Accessory</span>` : ''}
         <div class="ex-name">${item.name}</div>
-        <div class="ex-target">target ${item.target} ${item.unit}</div>
+        <div class="ex-target">${item.target} ${item.unit} × 3 rounds</div>
+        <div class="round-row">${roundDots}</div>
       </div>
       <input class="ex-input" type="number" inputmode="numeric" placeholder="${unitLabel}"
         value="${cs.value!==null?cs.value:''}"
@@ -608,11 +673,11 @@ function closeModal(){
   document.getElementById('modalBg').classList.remove('show');
 }
 
-function toggleCheck(idx){
+function toggleRound(idx, roundNum){
   const cs = checkedState[idx];
-  cs.checked = !cs.checked;
-  if(cs.checked && (cs.value===null || cs.value==='')){
-    // default to the target value if nothing entered yet, so a checked box always has a number
+  cs.rounds[roundNum] = !cs.rounds[roundNum];
+  if(cs.value===null || cs.value===''){
+    // default to the target value if nothing entered yet, so a completed round always has a number
     cs.value = currentLogExercises[idx].target;
   }
   renderChecklist();
@@ -620,15 +685,12 @@ function toggleCheck(idx){
 function setVal(idx, v){
   const n = parseInt(v);
   checkedState[idx].value = (v==='') ? null : (isNaN(n)?null:n);
-  if(checkedState[idx].value!==null && checkedState[idx].value>0){
-    checkedState[idx].checked = true;
-  }
   renderChecklist();
 }
 function updateSessionCount(){
   const total = currentLogExercises.length;
-  const done = Object.values(checkedState).filter(c=>c.checked).length;
-  document.getElementById('sessionCount').textContent = `${done} / ${total} done`;
+  const done = Object.values(checkedState).filter(c=>c.rounds.filter(r=>r).length===3).length;
+  document.getElementById('sessionCount').textContent = `${done} / ${total} exercises × 3 rounds done`;
 }
 
 function checkLevelUps(){
@@ -887,21 +949,29 @@ function saveLog(){
   const entries = [];
   currentLogExercises.forEach((item, idx)=>{
     const cs = checkedState[idx];
-    if(cs.checked && cs.value!==null && cs.value>0){
-      const sets = item.type==='hold' ? [{sec:cs.value}] : [{reps:cs.value}];
+    const roundsCompleted = cs.rounds.filter(r=>r).length;
+    if(roundsCompleted>0 && cs.value!==null && cs.value>0){
+      const sets = [];
+      for(let r=0;r<roundsCompleted;r++){
+        sets.push(item.type==='hold' ? {sec:cs.value} : {reps:cs.value});
+      }
       entries.push({exId: item.exId, tree: item.tree, name: item.name, kind: item.kind, sets});
     }
   });
 
   if(entries.length===0){
-    showToast('Check off at least one exercise to save.');
+    showToast('Complete at least one round to save.');
     return;
   }
 
   const date = todayStr();
+  const dayTree = currentLogExercises.length>0 ? currentLogExercises[0].tree : null;
   const existingIdx = state.sessions.findIndex(s=>s.date===date);
-  if(existingIdx>=0) state.sessions[existingIdx] = {date, entries};
-  else state.sessions.push({date, entries});
+  if(existingIdx>=0) state.sessions[existingIdx] = {date, tree: dayTree, entries};
+  else state.sessions.push({date, tree: dayTree, entries});
+  // Note: the schedule pointer (cyclePosition) is advanced lazily by
+  // resolveTodaySlot() the next time the app is opened on a later date,
+  // once it sees this date's session was logged — not here.
 
   // streak logic
   if(state.lastSessionDate !== date){

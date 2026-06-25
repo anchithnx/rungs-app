@@ -18,17 +18,21 @@ anywhere, there's no backend, no login.
 - Every single exercise (83 total, main moves + accessories) has a
   small stick-figure diagram so you can tell at a glance what an
   unfamiliar move looks like. Tap any diagram for a bigger view.
-- Each day it builds your session from your current rung on each ladder,
-  rotated based on how many days/week you train (3 = full body, 4 = upper/
-  lower split, 5+ = real push/pull/legs split). Each focus day gives you
-  one main progression move plus 3-4 accessory exercises. **The
-  accessory set is fixed per tier, not random** — you get the same small
-  set of genuinely basic moves every session until you advance to the
-  next tier, so nothing unfamiliar gets sprung on you.
-- All 5-6 of today's exercises show as a checklist right on the Train
-  tab. Tap the circle to check one off — it auto-fills the target
-  number. Tap the number box to type your actual reps/seconds instead.
-  One "Complete Session" button saves everything at once.
+- **One muscle group per day** — Push day, Pull day, Legs day, Core day,
+  rotating in that order, never combined. Each day gives 5 exercises:
+  your main progression move plus 4 fixed accessories for that tree.
+- **Circuit format, 3 rounds** — instead of logging each exercise once,
+  you do all 5 exercises, then repeat the full block 2 more times (3
+  rounds total). Each exercise shows 3 round-dots — tap one as you
+  finish that round. One shared rep/second target applies across all 3
+  rounds. The exercise only counts as fully done once all 3 rounds are
+  checked off.
+- **Rest days are built into the schedule**, based on your days/week
+  setting: 5+ days/week cycles Push → Pull → Legs → Core → rest;
+  4 days/week is two training days then a rest, repeating; 3 or fewer
+  is training day, rest day, alternating. If you skip a day without
+  opening the app, the schedule waits for you rather than skipping a
+  muscle group or piling up extra rest days.
 - When you've hit the rung's target across recent sessions, the app
   flags "ready to advance." You confirm — you stay in control of when
   you level up, the app just tells you when you've earned it.
