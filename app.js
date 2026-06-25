@@ -48,6 +48,7 @@ const POSE = (()=>{
     mountain_climber: ()=>wrap(`${ground(82)}${head(22,62)}${limb(28,64,68,72)}${limb(28,64,32,82)}${limb(68,72,76,82)}${limb(50,68,38,52)}`),
     wall_sit: ()=>wrap(`${ground(88)}${wall(76)}${head(64,40)}${limb(64,46,64,62)}${limb(64,62,42,62)}${limb(42,62,40,86)}${limb(64,62,64,86)}`),
     calf_raise: ()=>wrap(`${ground(86)}${head(50,22)}${limb(50,28,50,54)}${limb(50,54,40,80)}${limb(50,54,60,80)}<ellipse cx="40" cy="84" rx="7" ry="2.5" fill="${SURFACE}"/><ellipse cx="60" cy="84" rx="7" ry="2.5" fill="${SURFACE}"/>${limb(40,80,40,84,SURFACE,2)}${limb(60,80,60,84,SURFACE,2)}`),
+    arm_circles: ()=>wrap(`${ground(88)}${head(50,22)}${limb(50,28,50,60)}${limb(50,60,42,86)}${limb(50,60,58,86)}<circle cx="34" cy="38" r="10" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-dasharray="4 3"/><circle cx="66" cy="38" r="10" fill="none" stroke="${ACCENT}" stroke-width="2.5" stroke-dasharray="4 3"/>${dot(34,28)}${dot(66,28)}`),
   };
   return poses;
 })();
@@ -136,6 +137,7 @@ const EXERCISE_POSE = {
   'Hanging Oblique Raise': 'hanging_knee',
   'Plank Walkout': 'plank',
   'Front Lever Raise': 'hanging_knee',
+  'Arm Circles': 'arm_circles',
 };
 
 function poseSvg(exerciseName){
@@ -212,10 +214,10 @@ const TREES = {
 const ACCESSORIES = {
   push: {
     beginner: [
-      {name:'Wall Pike Push-up', type:'reps', target:10, unit:'reps'},
-      {name:'Chair Tricep Dip', type:'reps', target:12, unit:'reps'},
-      {name:'Incline Pike Push-up', type:'reps', target:10, unit:'reps'},
-      {name:'Shoulder Tap Plank', type:'reps', target:16, unit:'taps'}
+      {name:'Knee Push-up', type:'reps', target:10, unit:'reps'},
+      {name:'Incline Push-up', type:'reps', target:12, unit:'reps'},
+      {name:'Wall Push-up', type:'reps', target:15, unit:'reps'},
+      {name:'Arm Circles', type:'reps', target:15, unit:'reps/dir'}
     ],
     intermediate: [
       {name:'Pike Push-up', type:'reps', target:12, unit:'reps'},
@@ -232,10 +234,10 @@ const ACCESSORIES = {
   },
   pull: {
     beginner: [
-      {name:'Scapular Pull (hang shrugs)', type:'reps', target:10, unit:'reps'},
-      {name:'Doorframe Row', type:'reps', target:12, unit:'reps'},
-      {name:'Towel Face Pull', type:'reps', target:12, unit:'reps'},
-      {name:'Reverse Snow Angel', type:'reps', target:12, unit:'reps'}
+      {name:'Dead Hang', type:'hold', target:15, unit:'sec'},
+      {name:'Bodyweight Row (steep angle)', type:'reps', target:10, unit:'reps'},
+      {name:'Negative Pull-up', type:'reps', target:5, unit:'reps'},
+      {name:'Doorframe Row', type:'reps', target:12, unit:'reps'}
     ],
     intermediate: [
       {name:'Wide-Grip Row', type:'reps', target:12, unit:'reps'},
@@ -252,10 +254,10 @@ const ACCESSORIES = {
   },
   legs: {
     beginner: [
+      {name:'Bodyweight Squat', type:'reps', target:15, unit:'reps'},
       {name:'Glute Bridge', type:'reps', target:15, unit:'reps'},
       {name:'Calf Raise', type:'reps', target:20, unit:'reps'},
-      {name:'Step-Up (chair height)', type:'reps', target:12, unit:'reps/side'},
-      {name:'Wall Sit', type:'hold', target:30, unit:'sec'}
+      {name:'Wall Sit', type:'hold', target:20, unit:'sec'}
     ],
     intermediate: [
       {name:'Single-Leg Glute Bridge', type:'reps', target:12, unit:'reps/side'},
@@ -272,10 +274,10 @@ const ACCESSORIES = {
   },
   core: {
     beginner: [
-      {name:'Dead Bug', type:'reps', target:12, unit:'reps/side'},
-      {name:'Bird Dog', type:'reps', target:10, unit:'reps/side'},
-      {name:'Side Plank', type:'hold', target:20, unit:'sec/side'},
-      {name:'Bicycle Crunch', type:'reps', target:16, unit:'reps'}
+      {name:'Plank Hold', type:'hold', target:20, unit:'sec'},
+      {name:'Lying Leg Raise', type:'reps', target:10, unit:'reps'},
+      {name:'Bicycle Crunch', type:'reps', target:14, unit:'reps'},
+      {name:'Side Plank', type:'hold', target:15, unit:'sec/side'}
     ],
     intermediate: [
       {name:'Russian Twist', type:'reps', target:20, unit:'reps'},
@@ -302,14 +304,15 @@ function tierKeyForTree(t){
   return 'advanced';
 }
 
-function pickAccessories(t, count){
+function pickAccessories(t, count, excludeName){
+  // Fixed set per tier — same exercises every session at this level,
+  // not rotated. Once you advance to a new tier, the set changes.
+  // If the day's main rung happens to share a name with one of these
+  // (common at the very beginner tier, since both pools draw from the
+  // most basic moves), skip that one so it doesn't show up twice.
   const tierKey = tierKeyForTree(t);
-  const pool = ACCESSORIES[t][tierKey];
-  // stable pseudo-random pick based on date so it doesn't reshuffle on every render today,
-  // but does vary day to day
-  const seed = todayStr().split('-').reduce((a,c)=>a+parseInt(c),0) + t.length;
-  const shuffled = pool.map((ex,i)=>({ex, k:(seed*(i+7))%pool.length})).sort((a,b)=>a.k-b.k);
-  return shuffled.slice(0, count).map(s=>s.ex);
+  const pool = ACCESSORIES[t][tierKey].filter(ex => ex.name !== excludeName);
+  return pool.slice(0, count);
 }
 
 const TIERS = [
@@ -517,7 +520,7 @@ function getTodayExercises(){
     const rIdx = state.rungIndex[t];
     const mainRung = TREES[t].rungs[Math.min(rIdx, TREES[t].rungs.length-1)];
     items.push({tree:t, kind:'main', exId:mainRung.id, name:mainRung.name, type:mainRung.type, target:mainRung.target, unit:mainRung.unit});
-    const accessories = pickAccessories(t, accCount);
+    const accessories = pickAccessories(t, accCount, mainRung.name);
     accessories.forEach((a, i)=>{
       items.push({tree:t, kind:'accessory', exId:`acc_${t}_${i}_${a.name.replace(/\s+/g,'_')}`, name:a.name, type:a.type, target:a.target, unit:a.unit});
     });

@@ -21,8 +21,10 @@ anywhere, there's no backend, no login.
 - Each day it builds your session from your current rung on each ladder,
   rotated based on how many days/week you train (3 = full body, 4 = upper/
   lower split, 5+ = real push/pull/legs split). Each focus day gives you
-  one main progression move plus 3-4 accessory exercises, so it actually
-  feels like a full session, not one isolated move.
+  one main progression move plus 3-4 accessory exercises. **The
+  accessory set is fixed per tier, not random** — you get the same small
+  set of genuinely basic moves every session until you advance to the
+  next tier, so nothing unfamiliar gets sprung on you.
 - All 5-6 of today's exercises show as a checklist right on the Train
   tab. Tap the circle to check one off — it auto-fills the target
   number. Tap the number box to type your actual reps/seconds instead.
